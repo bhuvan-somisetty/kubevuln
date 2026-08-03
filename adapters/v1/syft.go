@@ -250,6 +250,12 @@ func (s *SyftAdapter) CreateSBOM(ctx context.Context, name, imageID, imageTag st
 	case s.concurrencySem <- struct{}{}:
 		defer func() { <-s.concurrencySem }()
 	case <-ctx.Done():
+		if src != nil {
+			if err := src.Close(); err != nil {
+				logger.L().Ctx(ctx).Warning("failed to close source on context cancellation", helpers.Error(err),
+					helpers.String("imageID", imageID))
+			}
+		}
 		return domainSBOM, ctx.Err()
 	}
 
