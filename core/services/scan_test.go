@@ -3667,29 +3667,13 @@ func (m *mockNilContentSBOMRepository) DeleteSBOM(ctx context.Context, name stri
 }
 
 type mockCountingSBOMCreator struct {
-	creator ports.SBOMCreator
-	calls   int
+	ports.SBOMCreator
+	calls int
 }
 
 func (m *mockCountingSBOMCreator) CreateSBOM(ctx context.Context, name, imageID, imageTag string, opts domain.RegistryOptions) (domain.SBOM, error) {
 	m.calls++
-	return m.creator.CreateSBOM(ctx, name, imageID, imageTag, opts)
-}
-
-func (m *mockCountingSBOMCreator) Version() string {
-	return m.creator.Version()
-}
-
-func (m *mockCountingSBOMCreator) GetMaxSBOMSize() int {
-	return m.creator.GetMaxSBOMSize()
-}
-
-func (m *mockCountingSBOMCreator) GetMaxImageSize() int64 {
-	return m.creator.GetMaxImageSize()
-}
-
-func (m *mockCountingSBOMCreator) GetMemoryLimit() string {
-	return m.creator.GetMemoryLimit()
+	return m.SBOMCreator.CreateSBOM(ctx, name, imageID, imageTag, opts)
 }
 
 func TestScanService_CachedTooLargeSBOM_ReusedWithoutRegeneration(t *testing.T) {
@@ -3706,7 +3690,7 @@ func TestScanService_CachedTooLargeSBOM_ReusedWithoutRegeneration(t *testing.T) 
 
 	t.Run("matching limit returns cached TooLarge marker without calling CreateSBOM", func(t *testing.T) {
 		baseCreator := adapters.NewMockSBOMAdapter(false, false, false)
-		countingCreator := &mockCountingSBOMCreator{creator: baseCreator}
+		countingCreator := &mockCountingSBOMCreator{SBOMCreator: baseCreator}
 		storage := newMockNilContentSBOMRepository()
 		cveStorage := repositories.NewMemoryStorage(false, false)
 		s := NewScanService(countingCreator, storage, adapters.NewMockCVEAdapter(), cveStorage, adapters.NewMockPlatform(false, nil), adapters.NewMockRelevancyAdapter(), true, false, true, false, false)
@@ -3735,7 +3719,7 @@ func TestScanService_CachedTooLargeSBOM_ReusedWithoutRegeneration(t *testing.T) 
 
 	t.Run("changed or missing limit invalidates cached nil-content TooLarge marker and triggers CreateSBOM", func(t *testing.T) {
 		baseCreator := adapters.NewMockSBOMAdapter(false, false, false)
-		countingCreator := &mockCountingSBOMCreator{creator: baseCreator}
+		countingCreator := &mockCountingSBOMCreator{SBOMCreator: baseCreator}
 		storage := newMockNilContentSBOMRepository()
 		cveStorage := repositories.NewMemoryStorage(false, false)
 		s := NewScanService(countingCreator, storage, adapters.NewMockCVEAdapter(), cveStorage, adapters.NewMockPlatform(false, nil), adapters.NewMockRelevancyAdapter(), true, false, true, false, false)
