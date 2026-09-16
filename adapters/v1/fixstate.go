@@ -43,7 +43,10 @@ func hasKnownFix(m v1beta1.Match) (bool, string) {
 		}
 		return true, unknownFixVersion
 	}
-	if m.Vulnerability.Fix.State == fixStateFixed {
+	// Casing comparison for Fix.State uses strings.EqualFold as an intentional defensive
+	// compatibility choice to handle noncanonical casing (e.g. "Fixed", "FIXED") from external
+	// data feeds or unconstrained custom storage APIs cleanly.
+	if strings.EqualFold(m.Vulnerability.Fix.State, fixStateFixed) {
 		return true, unknownFixVersion
 	}
 	// no concrete version: fall back to CPE matches. Only cpe-match details are read,
