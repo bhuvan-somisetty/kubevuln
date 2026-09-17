@@ -863,15 +863,28 @@ func Test_nearestDistroFix_RPMThreeCandidateCycle_AllPermutationsAgree(t *testin
 		{a, b, c}, {a, c, b}, {b, a, c}, {b, c, a}, {c, a, b}, {c, b, a},
 	}
 
-	var want string
-	for i, perm := range permutations {
+	for _, perm := range permutations {
 		got := nearestDistroFix(current, perm, grypeversion.RpmFormat)
-		if i == 0 {
-			want = got
-			continue
-		}
-		assert.Equal(t, want, got, "permutation %v disagreed with %v -> %q", perm, permutations[0], want)
+		assert.Equal(t, "", got, "permutation %v expected empty string for ambiguous RPM candidate set", perm)
 	}
+}
+
+func Test_hasKnownFix_AmbiguousRPMCandidates(t *testing.T) {
+	m := v1beta1.Match{
+		Artifact: v1beta1.GrypePackage{
+			Name:    "pkg",
+			Version: "0-1",
+			Type:    "rpm",
+		},
+		Vulnerability: v1beta1.Vulnerability{
+			Fix: v1beta1.Fix{
+				Versions: []string{"1-1", "1+0-1", "1a-1"},
+			},
+		},
+	}
+	isFixed, fixVersion := hasKnownFix(m)
+	assert.True(t, isFixed, "a fix is known to exist when Fix.Versions is non-empty")
+	assert.Equal(t, unknownFixVersion, fixVersion, "ambiguous RPM candidates map to unknown fix version")
 }
 
 // Test_rpmSafeToCompare exercises the guard in isolation, independent of
